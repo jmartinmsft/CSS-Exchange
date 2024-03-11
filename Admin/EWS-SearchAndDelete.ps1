@@ -1,7 +1,4 @@
-﻿# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
-param (
+﻿param (
     #[ValidateSet("Online", "Onprem")]
     #[Parameter(Mandatory = $false)]
     #[string]$Environment="Online",
