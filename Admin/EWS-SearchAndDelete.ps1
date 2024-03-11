@@ -1000,5 +1000,6 @@ end {
     $autoDSecureName = $cloudService.AutoDiscoverSecureName
     $azureADEndpoint = $cloudService.AzureADEndpoint
 
+    # Perform the search
     SearchMailbox
 }
