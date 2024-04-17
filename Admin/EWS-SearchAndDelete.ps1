@@ -414,7 +414,7 @@ begin {
                     $script:property += $propDef
                     Write-Verbose "Added property $property to list of those to retrieve"
                 } else {
-                    Log "Failed to parse (or convert) property $property" Red
+                    Write-Host "Failed to parse (or convert) property $property" -ForegroundColor Red
                 }
             }
         }
@@ -442,7 +442,7 @@ begin {
                         # This is a permanent error, so we remove the item from the list
                         [void]$Items.Remove($requestedItems[$i])
                         if (!$suppressErrors) {
-                            Log "Permanent error $($results[$i].ErrorCode) ($($results[$i].MessageText)) reported for item: $($requestedItems[$i].UniqueId)" Red
+                            Write-Host "Permanent error $($results[$i].ErrorCode) ($($results[$i].MessageText)) reported for item: $($requestedItems[$i].UniqueId)" -ForegroundColor Red
                         }
                     } else {
                         # This is most likely a temporary error, so we don't remove the item from the list
@@ -457,7 +457,7 @@ begin {
                             # We got an error 3 times in a row, so we'll admit defeat
                             [void]$Items.Remove($requestedItems[$i])
                             if (!$suppressErrors) {
-                                Log "Permanent error $($results[$i].ErrorCode) ($($results[$i].MessageText)) reported for item: $($requestedItems[$i].UniqueId)" Red
+                                Write-Host "Permanent error $($results[$i].ErrorCode) ($($results[$i].MessageText)) reported for item: $($requestedItems[$i].UniqueId)" -ForegroundColor Red
                             }
                         }
                     }
@@ -466,7 +466,7 @@ begin {
             }
         }
         if ( ($failed -gt 0) -and !$suppressErrors ) {
-            Log "$failed items reported error during batch request (if throttled, some failures are expected)" Yellow
+            Write-Host "$failed items reported error during batch request (if throttled, some failures are expected)" Yellow
         }
     }
 
@@ -514,7 +514,7 @@ begin {
             try {
                 #LogVerbose "Sending batch request to delete $($deleteIds.Count) items ($($ItemsToDelete.Count) remaining)"
 
-                $results = $script:service.DeleteItems( $deleteIds, $deleteMode, [Microsoft.Exchange.WebServices.Data.SendCancellationsMode]::SendToNone, $null )
+                $results = $script:EwsService.DeleteItems( $deleteIds, $deleteMode, [Microsoft.Exchange.WebServices.Data.SendCancellationsMode]::SendToNone, $null )
                 $consecutiveErrors = 0 # Reset the consecutive error count, as if we reach this point then this request succeeded with no error
             } catch {
                 # We reduce the batch size if we encounter an error (sometimes throttling does not return a throttled response, this can happen if the EWS request is proxied, and the proxied request times out)
@@ -532,9 +532,9 @@ begin {
                 if ( -not (Throttled) ) {
                     $consecutiveErrors++
                     try {
-                        Log "Unexpected error: $($Error[0].Exception.InnerException.ToString())" Red
+                        Write-Host "Unexpected error: $($Error[0].Exception.InnerException.ToString())" -ForegroundColor Red
                     } catch {
-                        Log "Unexpected error: $($Error[1])" Red
+                        Write-Host "Unexpected error: $($Error[1])" -ForegroundColor Red
                     }
                     $finished = ($consecutiveErrors -gt 9) # If we have 10 errors in a row, we stop processing
                 }
@@ -641,14 +641,14 @@ begin {
                             } catch {
                                 # Failed to create the subfolder
                                 $Folder = $null
-                                Log "Failed to create folder $($PathElements[$i]) in path $FolderPath" Red
+                                Write-Host "Failed to create folder $($PathElements[$i]) in path $FolderPath" -ForegroundColor Red
                                 break
                             }
                             $Folder = $subfolder
                         } else {
                             # Folder doesn't exist
                             $Folder = $null
-                            Log "Folder $($PathElements[$i]) doesn't exist in path $FolderPath" Red
+                            Write-Host "Folder $($PathElements[$i]) doesn't exist in path $FolderPath" -ForegroundColor Red
                             break
                         }
                     } else {
@@ -701,8 +701,6 @@ begin {
 
                 if ($folder) {
                     $folderPath = GetFolderPath($folder)
-                    Write-Host $folder.Id
-                    Write-Host "about to search"
                     SearchFolder $folder.Id
                 }
             }
@@ -722,9 +720,9 @@ begin {
 
         if ($responseXml.Trace.Envelope.Body.Fault.detail.MessageXml.Value.Name -eq "BackOffMilliseconds") {
             # We are throttled, and the server has told us how long to back off for
-            Log "Throttling detected, server requested back off for $($responseXml.Trace.Envelope.Body.Fault.detail.MessageXml.Value."#text") milliseconds" Yellow
+            Write-Host "Throttling detected, server requested back off for $($responseXml.Trace.Envelope.Body.Fault.detail.MessageXml.Value."#text") milliseconds" Yellow
             Start-Sleep -Milliseconds $responseXml.Trace.Envelope.Body.Fault.detail.MessageXml.Value."#text"
-            Log "Throttling budget should now be reset, resuming operations" Gray
+            Write-Host "Throttling budget should now be reset, resuming operations" Gray
             return $true
         }
         return $false
@@ -748,7 +746,7 @@ begin {
                 $folder = [Microsoft.Exchange.WebServices.Data.Folder]::Bind($exchangeService, $folderId, $propSet)
             }
             if (!($null -eq $folder)) {
-                Write-HostLog "Successfully bound to folder $folderId"
+                Write-Verbose "Successfully bound to folder $folderId"
             }
             return $folder
         } catch {
@@ -763,7 +761,7 @@ begin {
                     $folder = [Microsoft.Exchange.WebServices.Data.Folder]::Bind($exchangeService, $folderId, $propSet)
                 }
                 if (!($null -eq $folder)) {
-                    Write-HostLog "Successfully bound to folder $folderId"
+                    Write-Verbose "Successfully bound to folder $folderId"
                 }
                 return $folder
             } catch {
